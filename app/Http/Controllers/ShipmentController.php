@@ -19,40 +19,55 @@ class ShipmentController extends Controller
             return response()->json(['message' => 'مسموح فقط للمُرسلين بإضافة شحنات'], 403);
         }
 
-        // تحقق من البيانات
-        $validated = $request->validate([
-            'from_country' => 'required|string|max:100',
-            'from_city' => 'required|string|max:100',
-            'to_country' => 'required|string|max:100',
-            'to_city' => 'required|string|max:100',
-            'weight' => 'required|numeric|min:0.1',
-            'category' => 'required|string|max:100',
-            'description' => 'nullable|string|max:500',
-            'special_instructions' => 'nullable|string|max:500',
-            'delivery_from_date' => 'required|date',
-            'delivery_to_date' => 'required|date|after_or_equal:delivery_from_date',
-            'offered_price' => 'required|numeric|min:1',
-        ]);
-        // إنشاء الشحنة
-        $shipment = Shipment::create([
-            'user_id' => $user->id,
-            'from_country' => $validated['from_country'],
-            'from_city' => $validated['from_city'],
-            'to_country' => $validated['to_country'],
-            'to_city' => $validated['to_city'],
-            'weight' => $validated['weight'],
-            'category' => $validated['category'],
-            'description' => $validated['description'] ?? null,
-            'special_instructions' => $validated['special_instructions'] ?? null,
-            'delivery_from_date' => $validated['delivery_from_date'],
-            'delivery_to_date' => $validated['delivery_to_date'],
-            'offered_price' => $validated['offered_price'],
-        ]);
+        try {
+            // تحقق من البيانات مع validation محسن
+            $validated = $request->validate([
+                'from_country' => 'required|string|min:2|max:100|regex:/^[\p{L}\s\-]+$/u',
+                'from_city' => 'required|string|min:2|max:100|regex:/^[\p{L}\s\-]+$/u',
+                'to_country' => 'required|string|min:2|max:100|regex:/^[\p{L}\s\-]+$/u',
+                'to_city' => 'required|string|min:2|max:100|regex:/^[\p{L}\s\-]+$/u',
+                'weight' => 'required|numeric|min:0.1|max:50',
+                'category' => 'required|string|max:100|in:electronics,clothing,books,documents,food,gifts,medical,other',
+                'description' => 'nullable|string|max:1000',
+                'special_instructions' => 'nullable|string|max:500',
+                'delivery_from_date' => 'required|date|after_or_equal:today',
+                'delivery_to_date' => 'required|date|after_or_equal:delivery_from_date',
+                'offered_price' => 'required|numeric|min:1|max:10000',
+            ]);
+            
+            // إنشاء الشحنة
+            $shipment = Shipment::create([
+                'user_id' => $user->id,
+                'from_country' => $validated['from_country'],
+                'from_city' => $validated['from_city'],
+                'to_country' => $validated['to_country'],
+                'to_city' => $validated['to_city'],
+                'weight' => $validated['weight'],
+                'category' => $validated['category'],
+                'description' => $validated['description'] ?? null,
+                'special_instructions' => $validated['special_instructions'] ?? null,
+                'delivery_from_date' => $validated['delivery_from_date'],
+                'delivery_to_date' => $validated['delivery_to_date'],
+                'offered_price' => $validated['offered_price'],
+                'status' => 'open',
+            ]);
 
-        return response()->json([
-            'message' => 'تمت إضافة الشحنة بنجاح',
-            'data' => $shipment
-        ], 201);
+            return response()->json([
+                'message' => 'تمت إضافة الشحنة بنجاح',
+                'data' => $shipment->load('user:id,name,type')
+            ], 201);
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'بيانات غير صحيحة',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'حدث خطأ أثناء إضافة الشحنة',
+                'error' => config('app.debug') ? $e->getMessage() : 'خطأ في الخادم'
+            ], 500);
+        }
     }
 
     // المرسل يشوف الشحنات المقبولة

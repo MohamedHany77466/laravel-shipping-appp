@@ -11,13 +11,17 @@ use App\Http\Controllers\SenderController;
 use App\Http\Controllers\TravelerController;
 use App\Http\Controllers\ShipmentTrackingEventController;
 use App\Http\Controllers\TimelineController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\DashboardController;
 
 
 // ==================
 // Auth
 // ==================
-Route::post('/register', [RegisteredUserController::class, 'store']);
-Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+Route::middleware('throttle.custom:auth,5,1')->group(function () {
+    Route::post('/register', [RegisteredUserController::class, 'store']);
+    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+});
 
 // بيانات المستخدم الحالي
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
@@ -27,7 +31,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // ==================
 // مسارات محمية بـ Sanctum
 // ==================
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle.custom:api,100,1'])->group(function () {
 
     // المسافر يضيف سفريات
     Route::post('/travel-requests', [TravelRequestController::class, 'store']);
@@ -54,7 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sender/shipment/{id}/requests', [SenderController::class, 'shipmentRequests']);
     Route::post('/sender/request/{id}/status', [SenderController::class, 'updateRequestStatus']);
 });
-Route::middleware('auth:sanctum')->get('/notifications', function (Request $request) {
+Route::middleware(['auth:sanctum', 'throttle.custom:api,30,1'])->get('/notifications', function (Request $request) {
     return $request->user()->notifications;
 });
 
@@ -67,4 +71,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tracking-events/{shipment_travel_request_id}', [ShipmentTrackingEventController::class, 'index']);
     Route::post('/tracking-events', [ShipmentTrackingEventController::class, 'store']);
     Route::get('/timeline/{shipment_travel_request_id}', [TimelineController::class, 'getShipmentTimeline']);
+    
+    // البحث والفلترة
+    Route::get('/search/shipments', [SearchController::class, 'searchShipments']);
+    Route::get('/search/travels', [SearchController::class, 'searchTravels']);
+    
+    // لوحات التحكم
+    Route::get('/dashboard/sender', [DashboardController::class, 'senderDashboard']);
+    Route::get('/dashboard/traveler', [DashboardController::class, 'travelerDashboard']);
+    Route::get('/dashboard/stats', [DashboardController::class, 'userStats']);
 });

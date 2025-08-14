@@ -15,6 +15,8 @@ class User extends Authenticatable
      * الحقول اللي مسموح بالملأ الجماعي
      */
     protected $fillable = [
+        'first_name',
+        'last_name',
         'name',
         'email',
         'password',
@@ -49,7 +51,33 @@ class User extends Authenticatable
             'phone_verified' => 'boolean',
             'identity_verified' => 'boolean',
             'date_of_birth' => 'date',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * الحصول على الاسم الكامل
+     */
+    public function getFullNameAttribute()
+    {
+        return $this->first_name . ' ' . $this->last_name;
+    }
+
+    /**
+     * التحقق من حالة الحساب
+     */
+    public function isActive()
+    {
+        return $this->account_status === 'active';
+    }
+
+    /**
+     * التحقق من اكتمال التحقق
+     */
+    public function isFullyVerified()
+    {
+        return $this->email_verified && $this->phone_verified && $this->identity_verified;
     }
 
     /**
