@@ -80,4 +80,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard/sender', [DashboardController::class, 'senderDashboard']);
     Route::get('/dashboard/traveler', [DashboardController::class, 'travelerDashboard']);
     Route::get('/dashboard/stats', [DashboardController::class, 'userStats']);
+
+    // نظام تتبع الشحنات
+    Route::prefix('tracking')->group(function () {
+        Route::post('/confirm-payment/{shipmentTravelRequestId}', [App\Http\Controllers\ShipmentTrackingController::class, 'confirmPayment']);
+        Route::post('/confirm-pickup/{shipmentTravelRequestId}', [App\Http\Controllers\ShipmentTrackingController::class, 'confirmPickup']);
+        Route::post('/confirm-delivery', [App\Http\Controllers\ShipmentTrackingController::class, 'confirmDelivery']);
+        Route::post('/mark-completed/{shipmentTravelRequestId}', [App\Http\Controllers\ShipmentTrackingController::class, 'markAsCompleted']);
+        Route::get('/status/{shipmentTravelRequestId}', [App\Http\Controllers\ShipmentTrackingController::class, 'getShipmentStatus']);
+    });
+
+    // تحديث تلقائي للشحنات (للـ Cron Job)
+    Route::post('/auto-transit-shipments', [App\Http\Controllers\ShipmentTrackingController::class, 'autoTransitShipments']);
 });
