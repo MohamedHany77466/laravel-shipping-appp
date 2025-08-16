@@ -1,0 +1,130 @@
+# ملف اختبار HTTP للنظام
+# يمكن استخدامه مع VS Code REST Client Extension
+
+### متغيرات
+@baseUrl = http://localhost:8000/api
+@senderToken = your_sender_token_here
+@travelerToken = your_traveler_token_here
+
+### 1. تسجيل مرسل
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+    "first_name": "أحمد",
+    "last_name": "محمد",
+    "email": "sender@test.com",
+    "password": "Password123!",
+    "password_confirmation": "Password123!",
+    "phone_number": "01234567890",
+    "date_of_birth": "1990-01-01",
+    "gender": "male",
+    "type": "sender"
+}
+
+### 2. تسجيل مسافر
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+    "first_name": "سارة",
+    "last_name": "أحمد",
+    "email": "traveler@test.com",
+    "password": "Password123!",
+    "password_confirmation": "Password123!",
+    "phone_number": "01234567891",
+    "date_of_birth": "1992-01-01",
+    "gender": "female",
+    "type": "traveler"
+}
+
+### 3. إنشاء شحنة (المرسل)
+POST {{baseUrl}}/shipments
+Authorization: Bearer {{senderToken}}
+Content-Type: application/json
+
+{
+    "from_country": "مصر",
+    "from_city": "القاهرة",
+    "to_country": "السعودية",
+    "to_city": "الرياض",
+    "weight": 2.5,
+    "category": "electronics",
+    "description": "لابتوب شخصي",
+    "delivery_from_date": "2025-02-01",
+    "delivery_to_date": "2025-02-15",
+    "offered_price": 500,
+    "special_instructions": "يرجى التعامل بحذر"
+}
+
+### 4. إنشاء رحلة (المسافر)
+POST {{baseUrl}}/travel-requests
+Authorization: Bearer {{travelerToken}}
+Content-Type: application/json
+
+{
+    "from_country": "مصر",
+    "to_country": "السعودية",
+    "travel_date": "2025-02-05",
+    "max_weight": 10
+}
+
+### 5. تقديم عرض على الشحنة (المسافر)
+POST {{baseUrl}}/shipment-travel-requests
+Authorization: Bearer {{travelerToken}}
+Content-Type: application/json
+
+{
+    "shipment_id": 1,
+    "travel_id": 1,
+    "offered_price": 450
+}
+
+### 6. قبول العرض (المرسل)
+POST {{baseUrl}}/sender/request/1/status
+Authorization: Bearer {{senderToken}}
+Content-Type: application/json
+
+{
+    "status": "accepted"
+}
+
+### 7. تأكيد الدفع (المرسل)
+POST {{baseUrl}}/tracking/confirm-payment/1
+Authorization: Bearer {{senderToken}}
+Content-Type: application/json
+
+{}
+
+### 8. تأكيد الاستلام (المسافر)
+POST {{baseUrl}}/tracking/confirm-pickup/1
+Authorization: Bearer {{travelerToken}}
+Content-Type: application/json
+
+{}
+
+### 9. عرض حالة الشحنة
+GET {{baseUrl}}/tracking/status/1
+Authorization: Bearer {{senderToken}}
+
+### 10. التحويل التلقائي للشحنات
+POST {{baseUrl}}/auto-transit-shipments
+Content-Type: application/json
+
+{}
+
+### 11. تأكيد التسليم بـ QR Code (المسافر)
+POST {{baseUrl}}/tracking/confirm-delivery
+Authorization: Bearer {{travelerToken}}
+Content-Type: application/json
+
+{
+    "qr_code": "SHIP_1_abc123xyz"
+}
+
+### 12. اكتمال العملية (المرسل - اختياري)
+POST {{baseUrl}}/tracking/mark-completed/1
+Authorization: Bearer {{senderToken}}
+Content-Type: application/json
+
+{}
